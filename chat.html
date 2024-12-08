@@ -156,7 +156,7 @@
                 <div class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</div>
             `;
             messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Ensure we scroll to the bottom when a new message is added
         };
 
         // Send message
@@ -172,6 +172,7 @@
 
         // Receive chat message
         socket.on('chatMessage', displayMessage);
+
     </script>
 </body>
 </html>
