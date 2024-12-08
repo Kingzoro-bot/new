@@ -99,6 +99,7 @@
             border-radius: 20px;
             border: 1px solid rgba(221, 221, 221, 0.7);
             font-size: 0.9rem;
+            margin-right: 10px; /* Space between the input and button */
         }
 
         #send-button {
@@ -106,18 +107,24 @@
             color: white;
             border: none;
             border-radius: 50%;
-            padding: 10px;
+            padding: 12px;
             cursor: pointer;
-            margin-left: 10px;
+            width: 50px;
+            height: 50px;
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 40px;
-            height: 40px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for a sleek effect */
+            transition: background-color 0.3s, box-shadow 0.3s;
         }
 
         #send-button:hover {
             background-color: rgba(0, 86, 179, 0.9);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly larger shadow on hover */
+        }
+
+        #send-button:focus {
+            outline: none;
         }
 
         /* Mobile responsiveness */
@@ -126,14 +133,19 @@
                 height: 100%;
                 border-radius: 0;
             }
+
+            #send-button {
+                width: 45px;
+                height: 45px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="chat-container">
-        <h1>Chat Room</h1>
+        <h1 id="chat-header">Chat Room</h1>
         <div id="messages"></div>
-        <div class="message-input-wrapper">
+        <div id="input-area">
             <input id="message-input" type="text" placeholder="Type your message..." />
             <button id="send-button">Send</button>
         </div>
