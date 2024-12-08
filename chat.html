@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Chat Room</h1>
+        <div id="user-list">
+            <h3>Active Users:</h3>
+            <ul id="users"></ul>
+        </div>
+        <div id="messages"></div>
+        <input id="message-input" type="text" placeholder="Type your message..." />
+        <button id="send-button">Send</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const nickname = localStorage.getItem('nickname');
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const usersList = document.getElementById('users');
+
+        if (!nickname) {
+            window.location.href = '/';
+        }
+
+        socket.emit('login', nickname, (response) => {
+            if (!response.success) {
+                alert(response.message);
+                localStorage.removeItem('nickname');
+                window.location.href = '/';
+            }
+        });
+
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                socket.emit('chatMessage', message);
+                messageInput.value = '';
+            }
+        });
+
+        socket.on('chatMessage', (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${data.user}: ${data.message}`;
+            messagesDiv.appendChild(messageElement);
+        });
+
+        socket.on('userList', (users) => {
+            usersList.innerHTML = '';
+            users.forEach((user) => {
+                const userElement = document.createElement('li');
+                userElement.textContent = user;
+                usersList.appendChild(userElement);
+            });
+        });
+    </script>
+</body>
+</html>
