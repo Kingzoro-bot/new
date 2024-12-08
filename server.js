@@ -21,11 +21,6 @@ app.get('/chat', (req, res) => {
     res.sendFile(path.join(__dirname, 'chat.html'));
 });
 
-// Serve styles.css for both pages
-app.get('/styles.css', (req, res) => {
-    res.sendFile(path.join(__dirname, 'styles.css'));
-});
-
 // Handle WebSocket connections
 io.on('connection', (socket) => {
     let userNickname = null;
@@ -37,7 +32,8 @@ io.on('connection', (socket) => {
         } else {
             userNickname = nickname;
             activeUsers.add(nickname);
-            io.emit('userList', Array.from(activeUsers));
+            io.emit('userList', Array.from(activeUsers)); // Update active users list
+            io.emit('chatMessage', { user: 'System', message: `${nickname} has joined the chat.`, timestamp: Date.now() }); // Notify all users that someone has joined
             callback({ success: true });
             console.log(`${nickname} has joined the chat.`);
         }
@@ -47,7 +43,7 @@ io.on('connection', (socket) => {
     socket.on('chatMessage', (msg) => {
         if (userNickname) {
             const timestamp = Date.now(); // Get current timestamp
-            io.emit('chatMessage', { user: userNickname, message: msg, timestamp }); // Include timestamp
+            io.emit('chatMessage', { user: userNickname, message: msg, timestamp }); // Broadcast the message to all users
         }
     });
 
@@ -55,7 +51,8 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         if (userNickname) {
             activeUsers.delete(userNickname);
-            io.emit('userList', Array.from(activeUsers));
+            io.emit('userList', Array.from(activeUsers)); // Update active users list
+            io.emit('chatMessage', { user: 'System', message: `${userNickname} has left the chat.`, timestamp: Date.now() }); // Notify all users that someone has left
             console.log(`${userNickname} has left the chat.`);
         }
     });
