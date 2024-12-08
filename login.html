@@ -6,7 +6,7 @@
     <title>Login - Chat App</title>
     <link rel="stylesheet" href="/styles.css">
     <style>
-        body {
+     body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #4e54c8, #8f94fb);
             height: 100vh;
@@ -14,6 +14,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            transition: background 0.3s ease-in-out;
         }
 
         #login-container {
@@ -22,68 +23,108 @@
             border-radius: 15px;
             text-align: center;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.6s ease-out;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             color: #fff;
             margin-bottom: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
         }
 
         input[type="text"] {
             padding: 12px;
             width: 100%;
-            font-size: 1rem;
-            margin-bottom: 15px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
             border: none;
-            border-radius: 10px;
+            border-radius: 25px;
             outline: none;
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
             color: #333;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease-in-out;
         }
 
         input[type="text"]:focus {
             background-color: #fff;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-color: #8f94fb;
         }
 
         #login-button {
             padding: 12px 20px;
-            font-size: 1.1rem;
-            color: white;
+            font-size: 1.2rem;
+            color: #fff;
             background-color: #007bff;
             border: none;
-            border-radius: 20px;
+            border-radius: 25px;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: all 0.3s ease;
             width: 100%;
             margin-top: 10px;
         }
 
         #login-button:hover {
             background-color: #0056b3;
-            transform: translateY(-2px);
+            transform: scale(1.05);
         }
 
         #login-button:active {
-            transform: translateY(1px);
+            transform: scale(1);
         }
 
         #error-message {
             color: red;
             font-size: 0.9rem;
             margin-top: 10px;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Subtle animation for login-container */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        #profile-pic-input {
+            padding: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            width: 100%;
+            border: none;
+            background-color: #f5f5f5;
+            color: #333;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
         }
     </style>
 </head>
 <body>
     <div id="login-container">
-        <h1>Enter Chat</h1>
+        <h1>Welcome to Chat</h1>
         <input id="nickname-input" type="text" placeholder="Enter a unique nickname" />
+        <input id="profile-pic-input" type="file" accept="image/*" />
         <button id="login-button">Login</button>
         <div id="error-message" style="display: none;"></div>
     </div>
@@ -92,22 +133,41 @@
     <script>
         const socket = io();
         const nicknameInput = document.getElementById('nickname-input');
+        const profilePicInput = document.getElementById('profile-pic-input');
         const loginButton = document.getElementById('login-button');
         const errorMessage = document.getElementById('error-message');
 
         loginButton.addEventListener('click', () => {
             const nickname = nicknameInput.value.trim();
-            if (nickname) {
-                socket.emit('login', nickname, (response) => {
-                    if (response.success) {
-                        localStorage.setItem('nickname', nickname);
-                        window.location.href = '/chat';
-                    } else {
-                        errorMessage.textContent = response.message;
-                        errorMessage.style.display = 'block';
-                    }
-                });
+            const profilePic = profilePicInput.files[0];
+
+            if (!nickname) {
+                errorMessage.textContent = "Nickname cannot be empty!";
+                errorMessage.style.display = 'block';
+                return;
             }
+
+            if (!profilePic) {
+                errorMessage.textContent = "Please upload a profile picture!";
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Create a FormData object to send the file and nickname
+            const formData = new FormData();
+            formData.append('nickname', nickname);
+            formData.append('profilePic', profilePic);
+
+            // Example of emitting data through socket.io
+            socket.emit('login', formData, (response) => {
+                if (response.success) {
+                    localStorage.setItem('nickname', nickname);
+                    window.location.href = '/chat';
+                } else {
+                    errorMessage.textContent = response.message;
+                    errorMessage.style.display = 'block';
+                }
+            });
         });
     </script>
 </body>
