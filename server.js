@@ -9,7 +9,7 @@ const io = socketIO(server);
 
 const PORT = process.env.PORT || 8000;
 
-let activeUsers = new Set(); // To track logged-in nicknames
+let activeUsers = new Map(); // Store users by their nickname and associated socket IDs
 
 // Serve login.html when the user accesses the root
 app.get('/', (req, res) => {
@@ -28,13 +28,18 @@ io.on('connection', (socket) => {
     // Handle user login
     socket.on('login', (nickname, callback) => {
         if (activeUsers.has(nickname)) {
-            callback({ success: false, message: 'Nickname already taken' });
-        } else {
-            userNickname = nickname;
-            activeUsers.add(nickname);
-            io.emit('userList', Array.from(activeUsers)); // Update active users list
-            io.emit('chatMessage', { user: 'System', message: `${nickname} has joined the chat.`, timestamp: Date.now() }); // Notify all users that someone has joined
+            // User has already logged in on a different browser, just add the new socket to their entry
+            activeUsers.get(nickname).add(socket.id);
             callback({ success: true });
+            io.emit('userList', Array.from(activeUsers.keys()));
+            console.log(`${nickname} joined from a new browser.`);
+        } else {
+            // First time logging in
+            userNickname = nickname;
+            activeUsers.set(nickname, new Set([socket.id])); // Store socket ID in a set for the nickname
+            callback({ success: true });
+            io.emit('userList', Array.from(activeUsers.keys()));
+            io.emit('chatMessage', { user: 'System', message: `${nickname} has joined the chat.`, timestamp: Date.now() });
             console.log(`${nickname} has joined the chat.`);
         }
     });
@@ -50,10 +55,17 @@ io.on('connection', (socket) => {
     // Handle user disconnect
     socket.on('disconnect', () => {
         if (userNickname) {
-            activeUsers.delete(userNickname);
-            io.emit('userList', Array.from(activeUsers)); // Update active users list
-            io.emit('chatMessage', { user: 'System', message: `${userNickname} has left the chat.`, timestamp: Date.now() }); // Notify all users that someone has left
-            console.log(`${userNickname} has left the chat.`);
+            // Remove the socket from the active user set
+            let userSockets = activeUsers.get(userNickname);
+            userSockets.delete(socket.id);
+
+            // If the user has no more active sockets, they should be considered disconnected
+            if (userSockets.size === 0) {
+                activeUsers.delete(userNickname); // Remove the user from active users
+                io.emit('userList', Array.from(activeUsers.keys()));
+                io.emit('chatMessage', { user: 'System', message: `${userNickname} has left the chat.`, timestamp: Date.now() });
+                console.log(`${userNickname} has left the chat.`);
+            }
         }
     });
 });
