@@ -171,46 +171,10 @@
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message) {
-                const messageData = {
-                    user: nickname,
-                    message: message,
-                    timestamp: new Date().getTime()
-                };
-                socket.emit('chatMessage', messageData);
-                saveMessageToLocalStorage(messageData);
+                socket.emit('chatMessage', message);
                 messageInput.value = '';
             }
         });
-
-        // Save messages to localStorage
-        function saveMessageToLocalStorage(messageData) {
-            let messages = JSON.parse(localStorage.getItem('messages')) || [];
-            messages.push(messageData);
-            localStorage.setItem('messages', JSON.stringify(messages));
-        }
-
-        // Load messages from localStorage
-        function loadMessagesFromLocalStorage() {
-            const messages = JSON.parse(localStorage.getItem('messages')) || [];
-            messages.forEach((messageData) => {
-                displayMessage(messageData);
-            });
-        }
-
-        // Function to display a message
-        function displayMessage(data) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
-            messageElement.textContent = `${data.user}: ${data.message}`;
-
-            const timestampElement = document.createElement('span');
-            timestampElement.classList.add('timestamp');
-            timestampElement.textContent = formatTimestamp(data.timestamp);
-            messageElement.appendChild(timestampElement);
-
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-        }
 
         // Function to format the timestamp
         function formatTimestamp(timestamp) {
@@ -222,11 +186,18 @@
         }
 
         socket.on('chatMessage', (data) => {
-            displayMessage(data);
-        });
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
+            messageElement.textContent = `${data.user}: ${data.message}`;
 
-        // Load existing messages when the page loads
-        loadMessagesFromLocalStorage();
+            const timestampElement = document.createElement('span');
+            timestampElement.classList.add('timestamp');
+            timestampElement.textContent = formatTimestamp(data.timestamp);
+            messageElement.appendChild(timestampElement);
+
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        });
     </script>
 </body>
 </html>
