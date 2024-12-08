@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Platform</title>
     <style>
-        /* General styles */
+            /* General styles */
         * {
             margin: 0;
             padding: 0;
@@ -147,6 +147,7 @@
         <div id="messages"></div>
         <div id="input-area">
             <input id="message-input" type="text" placeholder="Type your message..." />
+            <input id="file-input" type="file" />
             <button id="send-button">Send</button>
         </div>
     </div>
@@ -157,6 +158,7 @@
         const nickname = localStorage.getItem('nickname');
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
+        const fileInput = document.getElementById('file-input');
         const sendButton = document.getElementById('send-button');
 
         if (!nickname) {
@@ -173,10 +175,32 @@
 
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
+            const file = fileInput.files[0];
+
             if (message) {
                 socket.emit('chatMessage', message);
                 messageInput.value = '';
             }
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            socket.emit('fileMessage', { fileUrl: data.fileUrl, fileType: file.type });
+                        } else {
+                            alert('File upload failed!');
+                        }
+                    });
+            }
+
+            fileInput.value = ''; // Reset the file input
         });
 
         // Function to format the timestamp
@@ -200,6 +224,40 @@
 
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        });
+
+        socket.on('fileMessage', (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
+
+            const userText = document.createElement('div');
+            userText.textContent = `${data.user}:`;
+            messageElement.appendChild(userText);
+
+            let mediaElement;
+            if (data.fileType.startsWith('image/')) {
+                mediaElement = document.createElement('img');
+                mediaElement.src = data.fileUrl;
+                mediaElement.alt = 'Uploaded Image';
+                mediaElement.style.maxWidth = '100%';
+                mediaElement.style.maxHeight = '200px';
+            } else if (data.fileType.startsWith('audio/')) {
+                mediaElement = document.createElement('audio');
+                mediaElement.controls = true;
+                mediaElement.src = data.fileUrl;
+            } else if (data.fileType.startsWith('video/')) {
+                mediaElement = document.createElement('video');
+                mediaElement.controls = true;
+                mediaElement.style.maxWidth = '100%';
+                mediaElement.src = data.fileUrl;
+            }
+
+            if (mediaElement) {
+                messageElement.appendChild(mediaElement);
+            }
+
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
     </script>
 </body>
