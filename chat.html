@@ -101,7 +101,7 @@
             font-size: 0.9rem;
         }
 
-        #send-button, #upload-button {
+        #send-button {
             background-color: rgba(0, 123, 255, 0.9);
             color: white;
             border: none;
@@ -116,12 +116,8 @@
             height: 40px;
         }
 
-        #send-button:hover, #upload-button:hover {
+        #send-button:hover {
             background-color: rgba(0, 86, 179, 0.9);
-        }
-
-        #file-input {
-            display: none;
         }
 
         /* Mobile responsiveness */
@@ -139,8 +135,6 @@
         <div id="messages"></div>
         <div id="input-area">
             <input id="message-input" type="text" placeholder="Type a message..." />
-            <input id="file-input" type="file" accept="image/*,video/*,audio/*" />
-            <button id="upload-button">&#128247;</button>
             <button id="send-button">&#9658;</button>
         </div>
     </div>
@@ -152,10 +146,6 @@
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const uploadButton = document.getElementById('upload-button');
-        const fileInput = document.getElementById('file-input');
-
-        const MAX_FILE_SIZE_MB = 50;
 
         // Function to display messages
         const displayMessage = (data) => {
@@ -180,42 +170,8 @@
             }
         });
 
-        // Upload file
-        uploadButton.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (file) {
-                if (file.size / 1024 / 1024 > MAX_FILE_SIZE_MB) {
-                    alert(`File size exceeds ${MAX_FILE_SIZE_MB} MB`);
-                } else {
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    fetch('/upload', {
-                        method: 'POST',
-                        body: formData,
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        const messageData = {
-                            user: nickname,
-                            message: `Uploaded: <a href="${data.url}" target="_blank">${file.name}</a>`,
-                            timestamp: Date.now(),
-                        };
-                        socket.emit('fileUpload', messageData);
-                        displayMessage(messageData);
-                    })
-                    .catch(err => console.error('Error uploading file:', err));
-                }
-            }
-        });
-
         // Receive chat message
         socket.on('chatMessage', displayMessage);
-
-        // Receive file upload
-        socket.on('fileUpload', displayMessage);
     </script>
 </body>
 </html>
