@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Platform</title>
     <style>
-            /* General styles */
+        /* General styles */
         * {
             margin: 0;
             padding: 0;
@@ -29,7 +29,7 @@
             height: 90%;
             display: flex;
             flex-direction: column;
-            background: rgba(255, 255, 255, 0.7); /* Transparent background */
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
@@ -37,7 +37,7 @@
 
         /* Header */
         #chat-header {
-            background-color: rgba(0, 123, 255, 0.8); /* Slightly transparent header */
+            background-color: rgba(0, 123, 255, 0.8);
             color: white;
             text-align: center;
             padding: 15px 10px;
@@ -50,7 +50,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 15px;
-            background-color: rgba(233, 235, 238, 0.5); /* Transparent background for messages */
+            background-color: rgba(233, 235, 238, 0.5);
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -89,8 +89,9 @@
             display: flex;
             align-items: center;
             padding: 10px;
-            background: rgba(255, 255, 255, 0.7); /* Transparent input area background */
+            background: rgba(255, 255, 255, 0.7);
             border-top: 1px solid rgba(221, 221, 221, 0.5);
+            gap: 10px;
         }
 
         #message-input {
@@ -99,10 +100,9 @@
             border-radius: 20px;
             border: 1px solid rgba(221, 221, 221, 0.7);
             font-size: 0.9rem;
-            margin-right: 10px; /* Space between the input and button */
         }
 
-        #send-button {
+        #send-button, #upload-button {
             background-color: rgba(0, 123, 255, 0.9);
             color: white;
             border: none;
@@ -114,17 +114,21 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for a sleek effect */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             transition: background-color 0.3s, box-shadow 0.3s;
         }
 
-        #send-button:hover {
+        #send-button:hover, #upload-button:hover {
             background-color: rgba(0, 86, 179, 0.9);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly larger shadow on hover */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
 
-        #send-button:focus {
+        #send-button:focus, #upload-button:focus {
             outline: none;
+        }
+
+        #file-input {
+            display: none;
         }
 
         /* Mobile responsiveness */
@@ -134,7 +138,7 @@
                 border-radius: 0;
             }
 
-            #send-button {
+            #send-button, #upload-button {
                 width: 45px;
                 height: 45px;
             }
@@ -147,8 +151,9 @@
         <div id="messages"></div>
         <div id="input-area">
             <input id="message-input" type="text" placeholder="Type your message..." />
-            <input id="file-input" type="file" />
             <button id="send-button">Send</button>
+            <button id="upload-button">📁</button>
+            <input id="file-input" type="file" />
         </div>
     </div>
 
@@ -158,8 +163,9 @@
         const nickname = localStorage.getItem('nickname');
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
-        const fileInput = document.getElementById('file-input');
         const sendButton = document.getElementById('send-button');
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('file-input');
 
         if (!nickname) {
             window.location.href = '/';
@@ -173,15 +179,23 @@
             }
         });
 
+        // Send text message
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
-            const file = fileInput.files[0];
-
             if (message) {
                 socket.emit('chatMessage', message);
                 messageInput.value = '';
             }
+        });
 
+        // Trigger file input dialog
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Handle file upload
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
             if (file) {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -198,20 +212,12 @@
                             alert('File upload failed!');
                         }
                     });
-            }
 
-            fileInput.value = ''; // Reset the file input
+                fileInput.value = ''; // Reset the file input
+            }
         });
 
-        // Function to format the timestamp
-        function formatTimestamp(timestamp) {
-            const date = new Date(timestamp);
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const seconds = date.getSeconds().toString().padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
-        }
-
+        // Display text messages
         socket.on('chatMessage', (data) => {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
@@ -226,6 +232,7 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
         });
 
+        // Display file messages
         socket.on('fileMessage', (data) => {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
@@ -259,6 +266,15 @@
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
+
+        // Format timestamps
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
     </script>
 </body>
 </html>
