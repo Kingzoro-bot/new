@@ -131,47 +131,64 @@
 </head>
 <body>
     <div id="chat-container">
-        <div id="chat-header">Chat Room</div>
+        <h1>Chat Room</h1>
         <div id="messages"></div>
-        <div id="input-area">
-            <input id="message-input" type="text" placeholder="Type a message..." />
-            <button id="send-button">&#9658;</button>
+        <div class="message-input-wrapper">
+            <input id="message-input" type="text" placeholder="Type your message..." />
+            <button id="send-button">Send</button>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const nickname = localStorage.getItem('nickname') || 'Guest';
+        const nickname = localStorage.getItem('nickname');
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
 
-        // Function to display messages
-        const displayMessage = (data) => {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', data.user === nickname ? 'sent' : 'received');
-            messageDiv.innerHTML = `
-                ${data.message}
-                <div class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</div>
-            `;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        };
+        if (!nickname) {
+            window.location.href = '/';
+        }
 
-        // Send message
+        socket.emit('login', nickname, (response) => {
+            if (!response.success) {
+                alert(response.message);
+                localStorage.removeItem('nickname');
+                window.location.href = '/';
+            }
+        });
+
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message) {
-                const data = { user: nickname, message, timestamp: Date.now() };
-                socket.emit('chatMessage', data);
-                displayMessage(data);
+                socket.emit('chatMessage', message);
                 messageInput.value = '';
             }
         });
 
-        // Receive chat message
-        socket.on('chatMessage', displayMessage);
+        // Function to format the timestamp
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        socket.on('chatMessage', (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
+            messageElement.textContent = `${data.user}: ${data.message}`;
+
+            const timestampElement = document.createElement('span');
+            timestampElement.classList.add('timestamp');
+            timestampElement.textContent = formatTimestamp(data.timestamp);
+            messageElement.appendChild(timestampElement);
+
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        });
     </script>
 </body>
 </html>
