@@ -3,65 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
-    <link rel="stylesheet" href="/styles.css">
+    <title>Chat Platform</title>
     <style>
-        /* Embedded CSS */
-        body {
-            font-family: 'Arial', sans-serif;
-            background-image: url('https://i.imgur.com/GGrXNVO.jpeg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+        /* General styles */
+        * {
             margin: 0;
             padding: 0;
-            color: #fff;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
         }
 
+        /* Chat container */
         #chat-container {
-            flex-grow: 1;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.7);
+            width: 100%;
+            max-width: 400px;
+            height: 90%;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
-            border-radius: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            height: 100%;
         }
 
-        h1 {
+        /* Header */
+        #chat-header {
+            background-color: #007bff;
+            color: white;
             text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: #00d4ff;
+            padding: 15px 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
         }
 
+        /* Messages area */
         #messages {
-            max-height: 85%;
+            flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e9ebee;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
+        /* Message styling */
         .message {
-            padding: 12px;
-            border-radius: 20px;
+            padding: 10px;
+            border-radius: 15px;
             max-width: 70%;
-            margin-bottom: 10px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             word-wrap: break-word;
-            display: flex;
-            flex-direction: column;
         }
 
         .sent {
@@ -71,66 +71,76 @@
         }
 
         .received {
-            background-color: #ddd;
+            background-color: #f1f0f0;
             color: black;
             align-self: flex-start;
         }
 
         .timestamp {
-            font-size: 0.8rem;
-            color: #ccc;
-            align-self: flex-end;
+            font-size: 0.7rem;
             margin-top: 5px;
+            opacity: 0.7;
+            text-align: right;
+        }
+
+        /* Input area */
+        #input-area {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #fff;
+            border-top: 1px solid #ddd;
         }
 
         #message-input {
-            padding: 12px;
+            flex: 1;
+            padding: 10px;
             border-radius: 20px;
-            border: none;
-            background: #f0f0f0;
-            color: #333;
-            font-size: 1rem;
-            width: calc(100% - 160px);
+            border: 1px solid #ddd;
+            font-size: 0.9rem;
         }
 
         #send-button, #upload-button {
-            padding: 12px 20px;
-            background-color: #00d4ff;
+            background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 50px;
+            border-radius: 50%;
+            padding: 10px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            outline: none;
+            margin-left: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
         }
 
         #send-button:hover, #upload-button:hover {
-            background-color: #00a6cc;
-            transform: translateY(-2px);
+            background-color: #0056b3;
         }
 
-        #send-button:active, #upload-button:active {
-            transform: translateY(1px);
+        #file-input {
+            display: none;
         }
 
-        .message-input-wrapper {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 20px;
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            #chat-container {
+                height: 100%;
+                border-radius: 0;
+            }
         }
     </style>
 </head>
 <body>
     <div id="chat-container">
-        <h1>Chat Room</h1>
+        <div id="chat-header">Chat Room</div>
         <div id="messages"></div>
-        <div class="message-input-wrapper">
-            <input id="message-input" type="text" placeholder="Type your message..." />
-            <button id="send-button">Send</button>
-            <input id="file-input" type="file" accept="image/*,video/*,audio/*" hidden />
-            <button id="upload-button">+</button>
+        <div id="input-area">
+            <input id="message-input" type="text" placeholder="Type a message..." />
+            <input id="file-input" type="file" accept="image/*,video/*,audio/*" />
+            <button id="upload-button">&#128247;</button>
+            <button id="send-button">&#9658;</button>
         </div>
     </div>
 
@@ -145,88 +155,59 @@
         const fileInput = document.getElementById('file-input');
 
         const MAX_FILE_SIZE_MB = 50;
-        const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
 
-        // Load chat history on page load
-        chatHistory.forEach(displayMessage);
-
-        if (!nickname) {
-            alert("No nickname found. Redirecting...");
-            window.location.href = '/';
-        }
-
-        // Save and Display Message
-        const saveAndDisplayMessage = (data) => {
-            chatHistory.push(data);
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            displayMessage(data);
-        };
-
-        const formatTimestamp = (timestamp) => {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString();
-        };
-
+        // Function to display messages
         const displayMessage = (data) => {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
-            messageElement.textContent = `${data.user}: ${data.message}`;
-
-            const timestampElement = document.createElement('span');
-            timestampElement.classList.add('timestamp');
-            timestampElement.textContent = formatTimestamp(data.timestamp);
-            messageElement.appendChild(timestampElement);
-
-            messagesDiv.appendChild(messageElement);
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', data.user === nickname ? 'sent' : 'received');
+            messageDiv.innerHTML = `
+                ${data.message}
+                <div class="timestamp">${new Date(data.timestamp).toLocaleTimeString()}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         };
 
-        // Handle Send Message
+        // Send message
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message) {
                 const data = { user: nickname, message, timestamp: Date.now() };
                 socket.emit('chatMessage', data);
-                saveAndDisplayMessage(data);
+                displayMessage(data);
                 messageInput.value = '';
             }
         });
 
-        // Handle Upload File
+        // Upload file
         uploadButton.addEventListener('click', () => fileInput.click());
 
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
             if (file) {
                 if (file.size / 1024 / 1024 > MAX_FILE_SIZE_MB) {
-                    alert(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit.`);
+                    alert(`File size exceeds ${MAX_FILE_SIZE_MB} MB`);
                 } else {
                     const reader = new FileReader();
                     reader.onload = () => {
                         const data = {
                             user: nickname,
-                            message: `Uploaded: ${file.name}`,
-                            fileData: reader.result,
-                            fileType: file.type,
+                            message: `Uploaded: <a href="${reader.result}" target="_blank">${file.name}</a>`,
                             timestamp: Date.now(),
                         };
                         socket.emit('fileUpload', data);
-                        saveAndDisplayMessage(data);
+                        displayMessage(data);
                     };
                     reader.readAsDataURL(file);
                 }
             }
         });
 
-        // Receive Chat Message
-        socket.on('chatMessage', (data) => {
-            saveAndDisplayMessage(data);
-        });
+        // Receive chat message
+        socket.on('chatMessage', displayMessage);
 
-        // Receive File
-        socket.on('fileUpload', (data) => {
-            saveAndDisplayMessage(data);
-        });
+        // Receive file upload
+        socket.on('fileUpload', displayMessage);
     </script>
 </body>
 </html>
