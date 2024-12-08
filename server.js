@@ -1,9 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
-const multer = require('multer');
 const path = require('path');
-const bodyParser = require('body-parser');
 
 const app = express();
 const server = http.createServer(app);
@@ -11,48 +9,24 @@ const io = socketIO(server);
 
 const PORT = process.env.PORT || 8000;
 
-// Middleware for parsing request bodies
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+let activeUsers = new Set(); // To track logged-in nicknames
 
-// Static files for uploaded content
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Set up storage for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({ storage });
-
-// Endpoint to handle file uploads
-app.post('/upload', upload.single('file'), (req, res) => {
-    if (req.file) {
-        res.json({ url: `/uploads/${req.file.filename}` });
-    } else {
-        res.status(400).json({ error: 'File upload failed' });
-    }
-});
-
-// Serve the login page
+// Serve login.html when the user accesses the root
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Serve the chat page
+// Serve chat.html when the user accesses the /chat route
 app.get('/chat', (req, res) => {
     res.sendFile(path.join(__dirname, 'chat.html'));
 });
 
-// Track active users
-const activeUsers = new Set();
+// Serve styles.css for both pages
+app.get('/styles.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
 
+// Handle WebSocket connections
 io.on('connection', (socket) => {
     let userNickname = null;
 
@@ -69,21 +43,11 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle chat messages
-    socket.on('chatMessage', (data) => {
+    // Handle user messages
+    socket.on('chatMessage', (msg) => {
         if (userNickname) {
-            io.emit('chatMessage', { 
-                user: userNickname, 
-                message: data.message, 
-                timestamp: data.timestamp 
-            });
-        }
-    });
-
-    // Handle file uploads (via WebSocket)
-    socket.on('fileUpload', (data) => {
-        if (userNickname) {
-            io.emit('fileUpload', data); // Broadcast the uploaded file message
+            const timestamp = Date.now(); // Get current timestamp
+            io.emit('chatMessage', { user: userNickname, message: msg, timestamp }); // Include timestamp
         }
     });
 
