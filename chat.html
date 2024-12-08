@@ -5,7 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Platform</title>
     <style>
-        /* Your existing styles */
+        /* General styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: url('https://i.imgur.com/GGrXNVO.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Chat container */
+        #chat-container {
+            width: 100%;
+            max-width: 400px;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Header */
+        #chat-header {
+            background-color: rgba(0, 123, 255, 0.8);
+            color: white;
+            text-align: center;
+            padding: 15px 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* Messages area */
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: rgba(233, 235, 238, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Message styling */
+        .message {
+            padding: 10px;
+            border-radius: 15px;
+            max-width: 70%;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+        }
+
+        .sent {
+            background-color: rgba(0, 123, 255, 0.9);
+            color: white;
+            align-self: flex-end;
+        }
+
+        .received {
+            background-color: rgba(241, 240, 240, 0.8);
+            color: black;
+            align-self: flex-start;
+        }
+
+        .timestamp {
+            font-size: 0.7rem;
+            margin-top: 5px;
+            opacity: 0.7;
+            text-align: right;
+        }
+
+        /* Input area */
+        #input-area {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid rgba(221, 221, 221, 0.5);
+            gap: 10px;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(221, 221, 221, 0.7);
+            font-size: 0.9rem;
+        }
+
+        #send-button, #upload-button {
+            background-color: rgba(0, 123, 255, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 12px;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        #send-button:hover, #upload-button:hover {
+            background-color: rgba(0, 86, 179, 0.9);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        #send-button:focus, #upload-button:focus {
+            outline: none;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            #chat-container {
+                height: 100%;
+                border-radius: 0;
+            }
+
+            #send-button, #upload-button {
+                width: 45px;
+                height: 45px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -29,25 +166,23 @@
         const sendButton = document.getElementById('send-button');
         const uploadButton = document.getElementById('upload-button');
         const fileInput = document.getElementById('file-input');
-        const STORAGE_KEY = "chatMessages";
 
         if (!nickname) {
             window.location.href = '/';
         }
 
-        // Load and display messages from local storage
-        loadMessagesFromLocalStorage();
+        socket.emit('login', nickname, (response) => {
+            if (!response.success) {
+                alert(response.message);
+                localStorage.removeItem('nickname');
+                window.location.href = '/';
+            }
+        });
 
         // Send text message
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message) {
-                const timestamp = Date.now();
-                const messageData = { user: nickname, message, timestamp };
-
-                addMessageToLocalStorage(messageData);
-                displayMessage(messageData, true);
-
                 socket.emit('chatMessage', message);
                 messageInput.value = '';
             }
@@ -72,17 +207,7 @@
                     .then((response) => response.json())
                     .then((data) => {
                         if (data.success) {
-                            const messageData = {
-                                user: nickname,
-                                fileUrl: data.fileUrl,
-                                fileType: file.type,
-                                timestamp: Date.now()
-                            };
-
-                            addMessageToLocalStorage(messageData);
-                            displayFileMessage(messageData, true);
-
-                            socket.emit('fileMessage', messageData);
+                            socket.emit('fileMessage', { fileUrl: data.fileUrl, fileType: file.type });
                         } else {
                             alert('File upload failed!');
                         }
@@ -92,52 +217,10 @@
             }
         });
 
-        // Display text messages received from the server
+        // Display text messages
         socket.on('chatMessage', (data) => {
-            addMessageToLocalStorage(data);
-            displayMessage(data, false);
-        });
-
-        // Display file messages received from the server
-        socket.on('fileMessage', (data) => {
-            addMessageToLocalStorage(data);
-            displayFileMessage(data, false);
-        });
-
-        // Add message to local storage
-        function addMessageToLocalStorage(messageData) {
-            const storedMessages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-            storedMessages.push(messageData);
-
-            // Keep only messages from the last 24 hours
-            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-            const recentMessages = storedMessages.filter(msg => msg.timestamp >= oneDayAgo);
-
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(recentMessages));
-        }
-
-        // Load messages from local storage and display them
-        function loadMessagesFromLocalStorage() {
-            const storedMessages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-
-            const recentMessages = storedMessages.filter(msg => msg.timestamp >= oneDayAgo);
-            recentMessages.forEach(msg => {
-                if (msg.fileUrl) {
-                    displayFileMessage(msg, msg.user === nickname);
-                } else {
-                    displayMessage(msg, msg.user === nickname);
-                }
-            });
-
-            // Update local storage to remove old messages
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(recentMessages));
-        }
-
-        // Display a text message
-        function displayMessage(data, isSent) {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message', isSent ? 'sent' : 'received');
+            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
             messageElement.textContent = `${data.user}: ${data.message}`;
 
             const timestampElement = document.createElement('span');
@@ -146,13 +229,13 @@
             messageElement.appendChild(timestampElement);
 
             messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        });
 
-        // Display a file message
-        function displayFileMessage(data, isSent) {
+        // Display file messages
+        socket.on('fileMessage', (data) => {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message', isSent ? 'sent' : 'received');
+            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
 
             const userText = document.createElement('div');
             userText.textContent = `${data.user}:`;
@@ -182,7 +265,7 @@
 
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+        });
 
         // Format timestamps
         function formatTimestamp(timestamp) {
