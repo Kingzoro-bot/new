@@ -57,20 +57,6 @@
         }
 
         /* Message styling */
-        .message-wrapper {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .profile-pic {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #007bff;
-        }
-
         .message {
             padding: 10px;
             border-radius: 15px;
@@ -83,7 +69,6 @@
             background-color: rgba(0, 123, 255, 0.9);
             color: white;
             align-self: flex-end;
-            order: 1;
         }
 
         .received {
@@ -167,7 +152,8 @@
         <div id="input-area">
             <input id="message-input" type="text" placeholder="Type your message..." />
             <button id="send-button">Send</button>
-            <input id="file-input" type="file" accept="image/*" />
+            <button id="upload-button">📁</button>
+            <input id="file-input" type="file" />
         </div>
     </div>
 
@@ -175,50 +161,120 @@
     <script>
         const socket = io();
         const nickname = localStorage.getItem('nickname');
-        const profilePicUrl = localStorage.getItem('profilePicUrl');
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('file-input');
 
-        if (!nickname || !profilePicUrl) {
+        if (!nickname) {
             window.location.href = '/';
         }
 
-        socket.emit('login', { nickname, profilePicUrl });
+        socket.emit('login', nickname, (response) => {
+            if (!response.success) {
+                alert(response.message);
+                localStorage.removeItem('nickname');
+                window.location.href = '/';
+            }
+        });
 
+        // Send text message
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message) {
-                socket.emit('chatMessage', { message });
+                socket.emit('chatMessage', message);
                 messageInput.value = '';
             }
         });
 
+        // Trigger file input dialog
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Handle file upload
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            socket.emit('fileMessage', { fileUrl: data.fileUrl, fileType: file.type });
+                        } else {
+                            alert('File upload failed!');
+                        }
+                    });
+
+                fileInput.value = ''; // Reset the file input
+            }
+        });
+
+        // Display text messages
         socket.on('chatMessage', (data) => {
-            const messageWrapper = document.createElement('div');
-            messageWrapper.classList.add('message-wrapper', data.user === nickname ? 'sent' : 'received');
-
-            const profilePic = document.createElement('img');
-            profilePic.src = data.profilePicUrl;
-            profilePic.alt = `${data.user}'s profile picture`;
-            profilePic.classList.add('profile-pic');
-
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
-            messageElement.textContent = data.message;
+            messageElement.textContent = `${data.user}: ${data.message}`;
 
             const timestampElement = document.createElement('span');
             timestampElement.classList.add('timestamp');
-            timestampElement.textContent = new Date(data.timestamp).toLocaleTimeString();
-
+            timestampElement.textContent = formatTimestamp(data.timestamp);
             messageElement.appendChild(timestampElement);
 
-            messageWrapper.appendChild(profilePic);
-            messageWrapper.appendChild(messageElement);
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        });
 
-            messagesDiv.appendChild(messageWrapper);
+        // Display file messages
+        socket.on('fileMessage', (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
+
+            const userText = document.createElement('div');
+            userText.textContent = `${data.user}:`;
+            messageElement.appendChild(userText);
+
+            let mediaElement;
+            if (data.fileType.startsWith('image/')) {
+                mediaElement = document.createElement('img');
+                mediaElement.src = data.fileUrl;
+                mediaElement.alt = 'Uploaded Image';
+                mediaElement.style.maxWidth = '100%';
+                mediaElement.style.maxHeight = '200px';
+            } else if (data.fileType.startsWith('audio/')) {
+                mediaElement = document.createElement('audio');
+                mediaElement.controls = true;
+                mediaElement.src = data.fileUrl;
+            } else if (data.fileType.startsWith('video/')) {
+                mediaElement = document.createElement('video');
+                mediaElement.controls = true;
+                mediaElement.style.maxWidth = '100%';
+                mediaElement.src = data.fileUrl;
+            }
+
+            if (mediaElement) {
+                messageElement.appendChild(mediaElement);
+            }
+
+            messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
+
+        // Format timestamps
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
     </script>
 </body>
 </html>
