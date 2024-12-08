@@ -24,7 +24,7 @@
         #chat-container {
             flex-grow: 1;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -35,17 +35,17 @@
 
         h1 {
             text-align: center;
-            font-size: 2rem;
+            font-size: 2.5rem;
             margin-bottom: 20px;
-            color: #007bff;
+            color: #00d4ff;
         }
 
         #messages {
             max-height: 85%;
             overflow-y: auto;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.3);
             margin-bottom: 20px;
             display: flex;
@@ -90,18 +90,28 @@
             background: #f0f0f0;
             color: #333;
             font-size: 1rem;
-            width: calc(100% - 150px);
+            width: calc(100% - 160px);
         }
 
         #send-button, #upload-button {
             padding: 12px 20px;
-            background-color: #007bff;
+            background-color: #00d4ff;
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             font-size: 1rem;
+            transition: all 0.3s ease;
             outline: none;
+        }
+
+        #send-button:hover, #upload-button:hover {
+            background-color: #00a6cc;
+            transform: translateY(-2px);
+        }
+
+        #send-button:active, #upload-button:active {
+            transform: translateY(1px);
         }
 
         .message-input-wrapper {
@@ -120,14 +130,14 @@
             <input id="message-input" type="text" placeholder="Type your message..." />
             <button id="send-button">Send</button>
             <input id="file-input" type="file" accept="image/*,video/*,audio/*" hidden />
-            <button id="upload-button">Upload File</button>
+            <button id="upload-button">+</button>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const nickname = localStorage.getItem('nickname');
+        const nickname = localStorage.getItem('nickname') || 'Guest';
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
@@ -135,53 +145,29 @@
         const fileInput = document.getElementById('file-input');
 
         const MAX_FILE_SIZE_MB = 50;
-
-        // Load chat history from local storage
         const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+
+        // Load chat history on page load
         chatHistory.forEach(displayMessage);
 
         if (!nickname) {
+            alert("No nickname found. Redirecting...");
             window.location.href = '/';
         }
 
-        socket.emit('login', nickname, (response) => {
-            if (!response.success) {
-                alert(response.message);
-                localStorage.removeItem('nickname');
-                window.location.href = '/';
-            }
-        });
-
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message) {
-                const data = { user: nickname, message, timestamp: Date.now() };
-                socket.emit('chatMessage', message);
-                saveMessage(data);
-                displayMessage(data);
-                messageInput.value = '';
-            }
-        });
-
-        uploadButton.addEventListener('click', () => fileInput.click());
-
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file && file.size / 1024 / 1024 <= MAX_FILE_SIZE_MB) {
-                alert(`File "${file.name}" uploaded successfully!`);
-                // Additional logic to handle file upload to the server
-            } else {
-                alert(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit.`);
-            }
-            fileInput.value = ''; // Reset file input
-        });
-
-        socket.on('chatMessage', (data) => {
-            saveMessage(data);
+        // Save and Display Message
+        const saveAndDisplayMessage = (data) => {
+            chatHistory.push(data);
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
             displayMessage(data);
-        });
+        };
 
-        function displayMessage(data) {
+        const formatTimestamp = (timestamp) => {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
+        };
+
+        const displayMessage = (data) => {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
             messageElement.textContent = `${data.user}: ${data.message}`;
@@ -193,20 +179,54 @@
 
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+        };
 
-        function saveMessage(data) {
-            chatHistory.push(data);
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-        }
+        // Handle Send Message
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                const data = { user: nickname, message, timestamp: Date.now() };
+                socket.emit('chatMessage', data);
+                saveAndDisplayMessage(data);
+                messageInput.value = '';
+            }
+        });
 
-        function formatTimestamp(timestamp) {
-            const date = new Date(timestamp);
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const seconds = date.getSeconds().toString().padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
-        }
+        // Handle Upload File
+        uploadButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size / 1024 / 1024 > MAX_FILE_SIZE_MB) {
+                    alert(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit.`);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const data = {
+                            user: nickname,
+                            message: `Uploaded: ${file.name}`,
+                            fileData: reader.result,
+                            fileType: file.type,
+                            timestamp: Date.now(),
+                        };
+                        socket.emit('fileUpload', data);
+                        saveAndDisplayMessage(data);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+
+        // Receive Chat Message
+        socket.on('chatMessage', (data) => {
+            saveAndDisplayMessage(data);
+        });
+
+        // Receive File
+        socket.on('fileUpload', (data) => {
+            saveAndDisplayMessage(data);
+        });
     </script>
 </body>
 </html>
