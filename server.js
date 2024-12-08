@@ -9,7 +9,7 @@ const io = socketIO(server);
 
 const PORT = process.env.PORT || 8000;
 
-let activeUsers = new Map(); // Store users by their nickname and associated socket IDs
+let activeUsers = new Set(); // To track logged-in nicknames
 
 // Serve login.html when the user accesses the root
 app.get('/', (req, res) => {
@@ -21,6 +21,11 @@ app.get('/chat', (req, res) => {
     res.sendFile(path.join(__dirname, 'chat.html'));
 });
 
+// Serve styles.css for both pages
+app.get('/styles.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
 // Handle WebSocket connections
 io.on('connection', (socket) => {
     let userNickname = null;
@@ -28,18 +33,12 @@ io.on('connection', (socket) => {
     // Handle user login
     socket.on('login', (nickname, callback) => {
         if (activeUsers.has(nickname)) {
-            // User has already logged in on a different browser, just add the new socket to their entry
-            activeUsers.get(nickname).add(socket.id);
-            callback({ success: true });
-            io.emit('userList', Array.from(activeUsers.keys()));
-            console.log(`${nickname} joined from a new browser.`);
+            callback({ success: false, message: 'Nickname already taken' });
         } else {
-            // First time logging in
             userNickname = nickname;
-            activeUsers.set(nickname, new Set([socket.id])); // Store socket ID in a set for the nickname
+            activeUsers.add(nickname);
+            io.emit('userList', Array.from(activeUsers));
             callback({ success: true });
-            io.emit('userList', Array.from(activeUsers.keys()));
-            io.emit('chatMessage', { user: 'System', message: `${nickname} has joined the chat.`, timestamp: Date.now() });
             console.log(`${nickname} has joined the chat.`);
         }
     });
@@ -48,24 +47,16 @@ io.on('connection', (socket) => {
     socket.on('chatMessage', (msg) => {
         if (userNickname) {
             const timestamp = Date.now(); // Get current timestamp
-            io.emit('chatMessage', { user: userNickname, message: msg, timestamp }); // Broadcast the message to all users
+            io.emit('chatMessage', { user: userNickname, message: msg, timestamp }); // Include timestamp
         }
     });
 
     // Handle user disconnect
     socket.on('disconnect', () => {
         if (userNickname) {
-            // Remove the socket from the active user set
-            let userSockets = activeUsers.get(userNickname);
-            userSockets.delete(socket.id);
-
-            // If the user has no more active sockets, they should be considered disconnected
-            if (userSockets.size === 0) {
-                activeUsers.delete(userNickname); // Remove the user from active users
-                io.emit('userList', Array.from(activeUsers.keys()));
-                io.emit('chatMessage', { user: 'System', message: `${userNickname} has left the chat.`, timestamp: Date.now() });
-                console.log(`${userNickname} has left the chat.`);
-            }
+            activeUsers.delete(userNickname);
+            io.emit('userList', Array.from(activeUsers));
+            console.log(`${userNickname} has left the chat.`);
         }
     });
 });
