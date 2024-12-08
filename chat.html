@@ -18,19 +18,19 @@
             color: #fff;
             display: flex;
             flex-direction: column;
-            height: 100vh; /* Full viewport height */
+            height: 100vh;
         }
 
         #chat-container {
             flex-grow: 1;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.5); /* Semi-transparent background for the chat */
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
-            justify-content: flex-end; /* Make the chat area grow upwards */
+            justify-content: flex-end;
             border-radius: 15px;
             overflow: hidden;
-            height: 100%; /* Full height of the screen */
+            height: 100%;
         }
 
         h1 {
@@ -41,7 +41,7 @@
         }
 
         #messages {
-            max-height: 85%; /* Messages take up most of the screen */
+            max-height: 85%;
             overflow-y: auto;
             padding: 20px;
             background: rgba(0, 0, 0, 0.4);
@@ -90,31 +90,18 @@
             background: #f0f0f0;
             color: #333;
             font-size: 1rem;
-            width: calc(100% - 80px);
+            width: calc(100% - 150px);
         }
 
-        #send-button {
+        #send-button, #upload-button {
             padding: 12px 20px;
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 50px; /* Sleeker round shape */
+            border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease-in-out;
             font-size: 1rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
-            outline: none; /* Remove default outline */
-        }
-
-        #send-button:hover {
-            background-color: #0056b3;
-            transform: translateY(-3px); /* Slight lifting effect */
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Shadow grows on hover */
-        }
-
-        #send-button:active {
-            transform: translateY(1px); /* Slight indent effect on click */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Smaller shadow when active */
+            outline: none;
         }
 
         .message-input-wrapper {
@@ -132,6 +119,8 @@
         <div class="message-input-wrapper">
             <input id="message-input" type="text" placeholder="Type your message..." />
             <button id="send-button">Send</button>
+            <input id="file-input" type="file" accept="image/*,video/*,audio/*" hidden />
+            <button id="upload-button">Upload File</button>
         </div>
     </div>
 
@@ -142,6 +131,14 @@
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('file-input');
+
+        const MAX_FILE_SIZE_MB = 50;
+
+        // Load chat history from local storage
+        const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        chatHistory.forEach(displayMessage);
 
         if (!nickname) {
             window.location.href = '/';
@@ -158,21 +155,33 @@
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message) {
+                const data = { user: nickname, message, timestamp: Date.now() };
                 socket.emit('chatMessage', message);
+                saveMessage(data);
+                displayMessage(data);
                 messageInput.value = '';
             }
         });
 
-        // Function to format the timestamp
-        function formatTimestamp(timestamp) {
-            const date = new Date(timestamp);
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const seconds = date.getSeconds().toString().padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
-        }
+        uploadButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.size / 1024 / 1024 <= MAX_FILE_SIZE_MB) {
+                alert(`File "${file.name}" uploaded successfully!`);
+                // Additional logic to handle file upload to the server
+            } else {
+                alert(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit.`);
+            }
+            fileInput.value = ''; // Reset file input
+        });
 
         socket.on('chatMessage', (data) => {
+            saveMessage(data);
+            displayMessage(data);
+        });
+
+        function displayMessage(data) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
             messageElement.textContent = `${data.user}: ${data.message}`;
@@ -183,8 +192,21 @@
             messageElement.appendChild(timestampElement);
 
             messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-        });
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function saveMessage(data) {
+            chatHistory.push(data);
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
     </script>
 </body>
 </html>
