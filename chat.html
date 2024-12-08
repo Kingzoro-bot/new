@@ -29,7 +29,7 @@
             height: 90%;
             display: flex;
             flex-direction: column;
-            background: rgba(255, 255, 255, 0.7); /* Transparent background */
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
@@ -37,7 +37,7 @@
 
         /* Header */
         #chat-header {
-            background-color: rgba(0, 123, 255, 0.8); /* Slightly transparent header */
+            background-color: rgba(0, 123, 255, 0.8);
             color: white;
             text-align: center;
             padding: 15px 10px;
@@ -50,7 +50,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 15px;
-            background-color: rgba(233, 235, 238, 0.5); /* Transparent background for messages */
+            background-color: rgba(233, 235, 238, 0.5);
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -89,7 +89,7 @@
             display: flex;
             align-items: center;
             padding: 10px;
-            background: rgba(255, 255, 255, 0.7); /* Transparent input area background */
+            background: rgba(255, 255, 255, 0.7);
             border-top: 1px solid rgba(221, 221, 221, 0.5);
         }
 
@@ -99,7 +99,6 @@
             border-radius: 20px;
             border: 1px solid rgba(221, 221, 221, 0.7);
             font-size: 0.9rem;
-            margin-right: 10px; /* Space between the input and button */
         }
 
         #send-button, #upload-button {
@@ -114,14 +113,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for a sleek effect */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             transition: background-color 0.3s, box-shadow 0.3s;
-            margin-left: 10px; /* Space between the buttons */
+            margin-left: 10px;
         }
 
         #send-button:hover, #upload-button:hover {
             background-color: rgba(0, 86, 179, 0.9);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly larger shadow on hover */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
 
         #send-button:focus, #upload-button:focus {
@@ -129,7 +128,7 @@
         }
 
         #file-input {
-            display: none; /* Hide the file input */
+            display: none;
         }
 
         /* Mobile responsiveness */
@@ -160,7 +159,6 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // JavaScript logic (unchanged from the previous message)
         const socket = io();
         const nickname = localStorage.getItem('nickname');
         const messagesDiv = document.getElementById('messages');
@@ -168,98 +166,18 @@
         const sendButton = document.getElementById('send-button');
         const uploadButton = document.getElementById('upload-button');
         const fileInput = document.getElementById('file-input');
-        const MESSAGE_STORAGE_KEY = "chatMessages";
 
         if (!nickname) {
             window.location.href = '/';
         }
 
-        // Load messages from localStorage
-        function loadMessages() {
-            const storedMessages = JSON.parse(localStorage.getItem(MESSAGE_STORAGE_KEY)) || [];
-            const now = Date.now();
-
-            // Filter out messages older than 1 day
-            const validMessages = storedMessages.filter(msg => now - msg.timestamp < 86400000);
-            localStorage.setItem(MESSAGE_STORAGE_KEY, JSON.stringify(validMessages));
-
-            validMessages.forEach(msg => {
-                displayMessage(msg, msg.user === nickname ? 'sent' : 'received');
-            });
-        }
-
-        // Save a new message to localStorage
-        function saveMessageToLocal(message, type) {
-            const storedMessages = JSON.parse(localStorage.getItem(MESSAGE_STORAGE_KEY)) || [];
-            const now = Date.now();
-
-            storedMessages.push({ ...message, timestamp: now, type });
-            localStorage.setItem(MESSAGE_STORAGE_KEY, JSON.stringify(storedMessages));
-        }
-
-        // Display a message in the chat
-        function displayMessage(data, type) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', type);
-
-            if (data.type === "text") {
-                messageElement.textContent = `${data.user}: ${data.message}`;
-            } else if (data.type === "file") {
-                const userText = document.createElement('div');
-                userText.textContent = `${data.user}:`;
-                messageElement.appendChild(userText);
-
-                let mediaElement;
-                if (data.fileType.startsWith('image/')) {
-                    mediaElement = document.createElement('img');
-                    mediaElement.src = data.fileUrl;
-                    mediaElement.alt = 'Uploaded Image';
-                    mediaElement.style.maxWidth = '100%';
-                    mediaElement.style.maxHeight = '200px';
-                } else if (data.fileType.startsWith('audio/')) {
-                    mediaElement = document.createElement('audio');
-                    mediaElement.controls = true;
-                    mediaElement.src = data.fileUrl;
-                } else if (data.fileType.startsWith('video/')) {
-                    mediaElement = document.createElement('video');
-                    mediaElement.controls = true;
-                    mediaElement.style.maxWidth = '100%';
-                    mediaElement.src = data.fileUrl;
-                }
-
-                if (mediaElement) {
-                    messageElement.appendChild(mediaElement);
-                }
-            }
-
-            const timestampElement = document.createElement('span');
-            timestampElement.classList.add('timestamp');
-            timestampElement.textContent = formatTimestamp(data.timestamp || Date.now());
-            messageElement.appendChild(timestampElement);
-
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        // Function to format the timestamp
-        function formatTimestamp(timestamp) {
-            const date = new Date(timestamp);
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            return `${hours}:${minutes}`;
-        }
-
-        // Load past messages on page load
-        loadMessages();
-
         // Send text message
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message) {
-                const messageData = { user: nickname, message, type: "text" };
-                displayMessage(messageData, 'sent');
-                saveMessageToLocal(messageData, 'text');
-                socket.emit('chatMessage', message);
+                const data = { user: nickname, message };
+                socket.emit('chatMessage', data);
+                addMessageToChat(data, 'sent');
                 messageInput.value = '';
             }
         });
@@ -283,29 +201,49 @@
                     .then((response) => response.json())
                     .then((data) => {
                         if (data.success) {
-                            const fileData = { user: nickname, fileUrl: data.fileUrl, fileType: file.type, type: "file" };
-                            displayMessage(fileData, 'sent');
-                            saveMessageToLocal(fileData, 'file');
-                            socket.emit('fileMessage', { fileUrl: data.fileUrl, fileType: file.type });
+                            const fileData = { user: nickname, fileUrl: data.fileUrl, fileType: file.type };
+                            socket.emit('fileMessage', fileData);
+                            addFileToChat(fileData, 'sent');
                         } else {
                             alert('File upload failed!');
                         }
                     });
-
                 fileInput.value = ''; // Reset the file input
             }
         });
 
-        // Receive and display text messages
+        // Add a message to the chat
+        function addMessageToChat(data, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.textContent = `${data.user}: ${data.message}`;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Add a file message to the chat
+        function addFileToChat(data, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.textContent = `${data.user} uploaded a file: `;
+
+            const link = document.createElement('a');
+            link.href = data.fileUrl;
+            link.textContent = 'View File';
+            link.target = '_blank';
+            messageElement.appendChild(link);
+
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Receive messages from the server
         socket.on('chatMessage', (data) => {
-            displayMessage(data, data.user === nickname ? 'sent' : 'received');
-            saveMessageToLocal(data, 'text');
+            addMessageToChat(data, 'received');
         });
 
-        // Receive and display file messages
         socket.on('fileMessage', (data) => {
-            displayMessage(data, data.user === nickname ? 'sent' : 'received');
-            saveMessageToLocal(data, 'file');
+            addFileToChat(data, 'received');
         });
     </script>
 </body>
