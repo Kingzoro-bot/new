@@ -2,30 +2,31 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const path = require('path');
-const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
 const io = socketIO(server);
 
+const PORT = process.env.PORT || 8000;
+
 let activeUsers = new Set(); // To track logged-in nicknames
 
-// Middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Routes
+// Serve login.html when the user accesses the root
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
+// Serve chat.html when the user accesses the /chat route
 app.get('/chat', (req, res) => {
     res.sendFile(path.join(__dirname, 'chat.html'));
 });
 
-// Real-time Chat
+// Serve styles.css for both pages
+app.get('/styles.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+// Handle WebSocket connections
 io.on('connection', (socket) => {
     let userNickname = null;
 
@@ -59,9 +60,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start server
+// Start the server
 server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
 });
-
-module.exports = app;
