@@ -21,19 +21,37 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// Serve uploaded files as static content
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// File upload route
 app.post('/upload', upload.single('file'), (req, res) => {
     if (req.file) {
+        // Send the file URL as a response
         res.json({ url: `/uploads/${req.file.filename}` });
     } else {
         res.status(400).json({ error: 'File upload failed' });
     }
 });
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // WebSocket logic
 io.on('connection', socket => {
-    // Chat logic
+    console.log('A user connected');
+    
+    // Send incoming file upload message to all clients
+    socket.on('fileUpload', (messageData) => {
+        socket.broadcast.emit('fileUpload', messageData);
+    });
+
+    // Chat message logic
+    socket.on('chatMessage', (data) => {
+        // Broadcast the message to other users
+        socket.broadcast.emit('chatMessage', data);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('A user disconnected');
+    });
 });
 
 server.listen(PORT, () => {
