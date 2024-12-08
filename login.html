@@ -5,14 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Chat App</title>
     <link rel="stylesheet" href="/styles.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #login-container {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            width: 100%;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 10px;
+            outline: none;
+            background-color: #f0f0f0;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            background-color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #login-button {
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #login-button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        #login-button:active {
+            transform: translateY(1px);
+        }
+
+        #error-message {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
     <div id="login-container">
         <h1>Enter Chat</h1>
         <input id="nickname-input" type="text" placeholder="Enter a unique nickname" />
         <button id="login-button">Login</button>
-        <div id="error-message" style="color: red; display: none;"></div>
+        <div id="error-message" style="display: none;"></div>
     </div>
+    
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();

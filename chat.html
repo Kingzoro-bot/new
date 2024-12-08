@@ -60,6 +60,8 @@
             margin-bottom: 10px;
             font-size: 1rem;
             word-wrap: break-word;
+            display: flex;
+            flex-direction: column;
         }
 
         .sent {
@@ -72,6 +74,13 @@
             background-color: #ddd;
             color: black;
             align-self: flex-start;
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            color: #ccc;
+            align-self: flex-end;
+            margin-top: 5px;
         }
 
         #message-input {
@@ -89,14 +98,23 @@
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 20px;
+            border-radius: 50px; /* Sleeker round shape */
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease-in-out;
             font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+            outline: none; /* Remove default outline */
         }
 
         #send-button:hover {
             background-color: #0056b3;
+            transform: translateY(-3px); /* Slight lifting effect */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Shadow grows on hover */
+        }
+
+        #send-button:active {
+            transform: translateY(1px); /* Slight indent effect on click */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Smaller shadow when active */
         }
 
         .message-input-wrapper {
@@ -116,6 +134,7 @@
             <button id="send-button">Send</button>
         </div>
     </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
@@ -144,10 +163,25 @@
             }
         });
 
+        // Function to format the timestamp
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
         socket.on('chatMessage', (data) => {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
             messageElement.textContent = `${data.user}: ${data.message}`;
+
+            const timestampElement = document.createElement('span');
+            timestampElement.classList.add('timestamp');
+            timestampElement.textContent = formatTimestamp(data.timestamp);
+            messageElement.appendChild(timestampElement);
+
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
         });

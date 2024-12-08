@@ -46,7 +46,8 @@ io.on('connection', (socket) => {
     // Handle user messages
     socket.on('chatMessage', (msg) => {
         if (userNickname) {
-            io.emit('chatMessage', { user: userNickname, message: msg });
+            const timestamp = Date.now(); // Get current timestamp
+            io.emit('chatMessage', { user: userNickname, message: msg, timestamp }); // Include timestamp
         }
     });
 
