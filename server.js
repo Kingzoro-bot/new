@@ -65,6 +65,7 @@ io.on('connection', (socket) => {
             userNickname = nickname;
             activeUsers.add(nickname);
             io.emit('userList', Array.from(activeUsers));
+            io.emit('chatNotification', { message: `${nickname} has joined the chat.` });
             callback({ success: true });
             console.log(`${nickname} has joined the chat.`);
         }
@@ -95,6 +96,7 @@ io.on('connection', (socket) => {
         if (userNickname) {
             activeUsers.delete(userNickname);
             io.emit('userList', Array.from(activeUsers));
+            io.emit('chatNotification', { message: `${userNickname} has left the chat.` });
             console.log(`${userNickname} has left the chat.`);
         }
     });
