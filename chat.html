@@ -270,10 +270,7 @@ function displayMessage(data) {
 sendButton.addEventListener('click', () => {
     const message = messageInput.value.trim();
     if (message) {
-        const data = { user: nickname, message, timestamp: Date.now() };
         socket.emit('chatMessage', message);
-        saveMessage(data); // Save to localStorage
-        displayMessage(data);
         messageInput.value = '';
     }
 });
@@ -304,8 +301,6 @@ fileInput.addEventListener('change', () => {
                         timestamp: Date.now(),
                     };
                     socket.emit('fileMessage', fileData);
-                    saveMessage(fileData); // Save to localStorage
-                    displayMessage(fileData);
                 } else {
                     alert('File upload failed!');
                 }
