@@ -14,12 +14,13 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: url('https://i.imgur.com/GGrXNVO.jpeg') no-repeat center center fixed;
+            background: url('https://i.imgur.com/G7Jmq9h.jpeg') no-repeat center center fixed;
             background-size: cover;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            color: #00ffff; /* Neon blue text */
         }
 
         /* Chat container */
@@ -29,20 +30,22 @@
             height: 90%;
             display: flex;
             flex-direction: column;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.4); /* Black with higher transparency */
+            border: 2px solid #00ffff; /* Neon blue border */
+            border-radius: 15px;
+            box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff; /* Neon glow */
             overflow: hidden;
         }
 
         /* Header */
         #chat-header {
-            background-color: rgba(0, 123, 255, 0.8);
-            color: white;
+            background: linear-gradient(135deg, #00ffff, rgba(0, 0, 0, 0.3)); /* Semi-transparent black */
+            color: #fff;
             text-align: center;
             padding: 15px 10px;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
+            text-shadow: 0 0 15px #00ffff, 0 0 25px #00ffff;
         }
 
         /* Messages area */
@@ -50,38 +53,42 @@
             flex: 1;
             overflow-y: auto;
             padding: 15px;
-            background-color: rgba(233, 235, 238, 0.5);
+            background: rgba(0, 0, 0, 0.2); /* More transparent background */
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
 
         /* Message styling */
         .message {
-            padding: 10px;
-            border-radius: 15px;
+            padding: 15px;
+            border-radius: 20px;
             max-width: 70%;
-            font-size: 0.9rem;
+            font-size: 1rem;
             word-wrap: break-word;
+            position: relative;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 10px #00ffff, 0 0 15px #00ffff;
         }
 
         .sent {
-            background-color: rgba(0, 123, 255, 0.9);
-            color: white;
+            background: linear-gradient(135deg, #00ffff, rgba(0, 0, 0, 0.3));
+            color: #fff;
             align-self: flex-end;
         }
 
         .received {
-            background-color: rgba(241, 240, 240, 0.8);
-            color: black;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), #00ffff);
+            color: #fff;
             align-self: flex-start;
         }
 
         .timestamp {
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             margin-top: 5px;
-            opacity: 0.7;
+            opacity: 0.8;
             text-align: right;
+            color: #00ffff;
         }
 
         /* Input area */
@@ -89,38 +96,47 @@
             display: flex;
             align-items: center;
             padding: 10px;
-            background: rgba(255, 255, 255, 0.7);
-            border-top: 1px solid rgba(221, 221, 221, 0.5);
+            background: rgba(0, 0, 0, 0.4); /* Black with transparency */
+            border-top: 2px solid #00ffff;
             gap: 10px;
         }
 
         #message-input {
             flex: 1;
-            padding: 10px;
+            padding: 15px;
             border-radius: 20px;
-            border: 1px solid rgba(221, 221, 221, 0.7);
-            font-size: 0.9rem;
+            border: 2px solid #00ffff;
+            font-size: 1rem;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.2); /* Lighter transparent input */
+            outline: none;
+            box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+        }
+
+        #message-input::placeholder {
+            color: #00ffff;
+            opacity: 0.8;
         }
 
         #send-button, #upload-button {
-            background-color: rgba(0, 123, 255, 0.9);
-            color: white;
+            background: linear-gradient(135deg, #00ffff, rgba(0, 0, 0, 0.3));
+            color: #fff;
             border: none;
             border-radius: 50%;
-            padding: 12px;
+            padding: 15px;
             cursor: pointer;
-            width: 50px;
-            height: 50px;
+            width: 55px;
+            height: 55px;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff;
+            transition: all 0.3s ease;
         }
 
         #send-button:hover, #upload-button:hover {
-            background-color: rgba(0, 86, 179, 0.9);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), #00ffff);
+            box-shadow: 0 0 30px #00ffff, 0 0 50px #00ffff;
         }
 
         #send-button:focus, #upload-button:focus {
@@ -139,8 +155,8 @@
             }
 
             #send-button, #upload-button {
-                width: 45px;
-                height: 45px;
+                width: 50px;
+                height: 50px;
             }
         }
     </style>
@@ -151,7 +167,7 @@
         <div id="messages"></div>
         <div id="input-area">
             <input id="message-input" type="text" placeholder="Type your message..." />
-            <button id="send-button">Send</button>
+            <button id="send-button">▶</button>
             <button id="upload-button">📁</button>
             <input id="file-input" type="file" />
         </div>
@@ -160,121 +176,168 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const nickname = localStorage.getItem('nickname');
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const uploadButton = document.getElementById('upload-button');
-        const fileInput = document.getElementById('file-input');
+const nickname = localStorage.getItem('nickname');
+const messagesDiv = document.getElementById('messages');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-button');
+const uploadButton = document.getElementById('upload-button');
+const fileInput = document.getElementById('file-input');
 
-        if (!nickname) {
-            window.location.href = '/';
+if (!nickname) {
+    window.location.href = '/';
+}
+
+socket.emit('login', nickname, (response) => {
+    if (!response.success) {
+        alert(response.message);
+        localStorage.removeItem('nickname');
+        window.location.href = '/';
+    }
+});
+
+// Save messages to localStorage with timestamp
+function saveMessage(data) {
+    const storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+    storedMessages.push({ ...data, savedAt: Date.now() });
+    localStorage.setItem('chatMessages', JSON.stringify(storedMessages));
+    cleanOldMessages(); // Remove messages older than 1 day
+}
+
+// Retrieve messages from localStorage and display them
+function loadMessages() {
+    const storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+    const now = Date.now();
+    storedMessages.forEach((message) => {
+        if (now - message.savedAt <= 86400000) { // Check if the message is within 1 day
+            displayMessage(message);
+        }
+    });
+}
+
+// Remove messages older than 1 day from localStorage
+function cleanOldMessages() {
+    const storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+    const now = Date.now();
+    const filteredMessages = storedMessages.filter((message) => now - message.savedAt <= 86400000);
+    localStorage.setItem('chatMessages', JSON.stringify(filteredMessages));
+}
+
+// Display a message (text or file)
+function displayMessage(data) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
+
+    if (data.message) {
+        messageElement.textContent = `${data.user}: ${data.message}`;
+    } else if (data.fileUrl) {
+        const userText = document.createElement('div');
+        userText.textContent = `${data.user}:`;
+        messageElement.appendChild(userText);
+
+        let mediaElement;
+        if (data.fileType.startsWith('image/')) {
+            mediaElement = document.createElement('img');
+            mediaElement.src = data.fileUrl;
+            mediaElement.alt = 'Uploaded Image';
+            mediaElement.style.maxWidth = '100%';
+            mediaElement.style.maxHeight = '200px';
+        } else if (data.fileType.startsWith('audio/')) {
+            mediaElement = document.createElement('audio');
+            mediaElement.controls = true;
+            mediaElement.src = data.fileUrl;
+        } else if (data.fileType.startsWith('video/')) {
+            mediaElement = document.createElement('video');
+            mediaElement.controls = true;
+            mediaElement.style.maxWidth = '100%';
+            mediaElement.src = data.fileUrl;
         }
 
-        socket.emit('login', nickname, (response) => {
-            if (!response.success) {
-                alert(response.message);
-                localStorage.removeItem('nickname');
-                window.location.href = '/';
-            }
-        });
-
-        // Send text message
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message) {
-                socket.emit('chatMessage', message);
-                messageInput.value = '';
-            }
-        });
-
-        // Trigger file input dialog
-        uploadButton.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        // Handle file upload
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (file) {
-                const formData = new FormData();
-                formData.append('file', file);
-
-                fetch('/upload', {
-                    method: 'POST',
-                    body: formData,
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        if (data.success) {
-                            socket.emit('fileMessage', { fileUrl: data.fileUrl, fileType: file.type });
-                        } else {
-                            alert('File upload failed!');
-                        }
-                    });
-
-                fileInput.value = ''; // Reset the file input
-            }
-        });
-
-        // Display text messages
-        socket.on('chatMessage', (data) => {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
-            messageElement.textContent = `${data.user}: ${data.message}`;
-
-            const timestampElement = document.createElement('span');
-            timestampElement.classList.add('timestamp');
-            timestampElement.textContent = formatTimestamp(data.timestamp);
-            messageElement.appendChild(timestampElement);
-
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-        });
-
-        // Display file messages
-        socket.on('fileMessage', (data) => {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
-
-            const userText = document.createElement('div');
-            userText.textContent = `${data.user}:`;
-            messageElement.appendChild(userText);
-
-            let mediaElement;
-            if (data.fileType.startsWith('image/')) {
-                mediaElement = document.createElement('img');
-                mediaElement.src = data.fileUrl;
-                mediaElement.alt = 'Uploaded Image';
-                mediaElement.style.maxWidth = '100%';
-                mediaElement.style.maxHeight = '200px';
-            } else if (data.fileType.startsWith('audio/')) {
-                mediaElement = document.createElement('audio');
-                mediaElement.controls = true;
-                mediaElement.src = data.fileUrl;
-            } else if (data.fileType.startsWith('video/')) {
-                mediaElement = document.createElement('video');
-                mediaElement.controls = true;
-                mediaElement.style.maxWidth = '100%';
-                mediaElement.src = data.fileUrl;
-            }
-
-            if (mediaElement) {
-                messageElement.appendChild(mediaElement);
-            }
-
-            messagesDiv.appendChild(messageElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        });
-
-        // Format timestamps
-        function formatTimestamp(timestamp) {
-            const date = new Date(timestamp);
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const seconds = date.getSeconds().toString().padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
+        if (mediaElement) {
+            messageElement.appendChild(mediaElement);
         }
+    }
+
+    const timestampElement = document.createElement('span');
+    timestampElement.classList.add('timestamp');
+    timestampElement.textContent = formatTimestamp(data.timestamp);
+    messageElement.appendChild(timestampElement);
+
+    messagesDiv.appendChild(messageElement);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Send text message
+sendButton.addEventListener('click', () => {
+    const message = messageInput.value.trim();
+    if (message) {
+        const data = { user: nickname, message, timestamp: Date.now() };
+        socket.emit('chatMessage', message);
+        saveMessage(data); // Save to localStorage
+        displayMessage(data);
+        messageInput.value = '';
+    }
+});
+
+// Trigger file input dialog
+uploadButton.addEventListener('click', () => {
+    fileInput.click();
+});
+
+// Handle file upload
+fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    const fileData = {
+                        user: nickname,
+                        fileUrl: data.fileUrl,
+                        fileType: file.type,
+                        timestamp: Date.now(),
+                    };
+                    socket.emit('fileMessage', fileData);
+                    saveMessage(fileData); // Save to localStorage
+                    displayMessage(fileData);
+                } else {
+                    alert('File upload failed!');
+                }
+            });
+
+        fileInput.value = ''; // Reset the file input
+    }
+});
+
+// Display text messages from server
+socket.on('chatMessage', (data) => {
+    saveMessage(data); // Save to localStorage
+    displayMessage(data);
+});
+
+// Display file messages from server
+socket.on('fileMessage', (data) => {
+    saveMessage(data); // Save to localStorage
+    displayMessage(data);
+});
+
+// Format timestamps
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+}
+
+// Load messages on page load
+loadMessages();
     </script>
 </body>
 </html>
