@@ -197,7 +197,7 @@ function saveMessage(data) {
     const storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
     storedMessages.push({ ...data, savedAt: Date.now() });
     localStorage.setItem('chatMessages', JSON.stringify(storedMessages));
-    cleanOldMessages(); // Remove messages older than 1 day
+    cleanOldMessages();
 }
 
 // Retrieve messages from localStorage and display them
@@ -205,7 +205,7 @@ function loadMessages() {
     const storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
     const now = Date.now();
     storedMessages.forEach((message) => {
-        if (now - message.savedAt <= 86400000) { // Check if the message is within 1 day
+        if (now - message.savedAt <= 86400000) {
             displayMessage(message);
         }
     });
@@ -224,8 +224,17 @@ function displayMessage(data) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
 
+    // Message content
+    const contentElement = document.createElement('div');
+    if (data.replyTo) {
+        const replyElement = document.createElement('div');
+        replyElement.classList.add('reply');
+        replyElement.textContent = `Replying to: ${data.replyTo}`;
+        messageElement.appendChild(replyElement);
+    }
+
     if (data.message) {
-        messageElement.textContent = `${data.user}: ${data.message}`;
+        contentElement.textContent = `${data.user}: ${data.message}`;
     } else if (data.fileUrl) {
         const userText = document.createElement('div');
         userText.textContent = `${data.user}:`;
@@ -250,14 +259,52 @@ function displayMessage(data) {
         }
 
         if (mediaElement) {
-            messageElement.appendChild(mediaElement);
+            contentElement.appendChild(mediaElement);
         }
     }
 
+    messageElement.appendChild(contentElement);
+
+    // Timestamp
     const timestampElement = document.createElement('span');
     timestampElement.classList.add('timestamp');
     timestampElement.textContent = formatTimestamp(data.timestamp);
     messageElement.appendChild(timestampElement);
+
+    // Reply and reaction functionality
+    const actionsDiv = document.createElement('div');
+    actionsDiv.classList.add('actions');
+
+    // Reply button
+    const replyButton = document.createElement('button');
+    replyButton.textContent = 'Reply';
+    replyButton.addEventListener('click', () => {
+        messageInput.value = `Replying to: ${data.message || 'Media'}`;
+        messageInput.dataset.replyTo = data.message || data.fileUrl || '';
+    });
+    actionsDiv.appendChild(replyButton);
+
+    // Reaction functionality
+    messageElement.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const emojiMenu = document.createElement('div');
+        emojiMenu.classList.add('emoji-menu');
+        const emojis = ['👍', '❤️', '😊', '😂'];
+        emojis.forEach((emoji) => {
+            const emojiButton = document.createElement('button');
+            emojiButton.textContent = emoji;
+            emojiButton.addEventListener('click', () => {
+                socket.emit('reactMessage', { messageId: data.id, emoji });
+                emojiMenu.remove();
+            });
+            emojiMenu.appendChild(emojiButton);
+        });
+        messageElement.appendChild(emojiMenu);
+
+        document.addEventListener('click', () => emojiMenu.remove(), { once: true });
+    });
+
+    messageElement.appendChild(actionsDiv);
 
     messagesDiv.appendChild(messageElement);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -266,9 +313,11 @@ function displayMessage(data) {
 // Send text message
 sendButton.addEventListener('click', () => {
     const message = messageInput.value.trim();
+    const replyTo = messageInput.dataset.replyTo || null;
     if (message) {
-        socket.emit('chatMessage', message);
+        socket.emit('chatMessage', { message, replyTo });
         messageInput.value = '';
+        delete messageInput.dataset.replyTo;
     }
 });
 
@@ -303,20 +352,30 @@ fileInput.addEventListener('change', () => {
                 }
             });
 
-        fileInput.value = ''; // Reset the file input
+        fileInput.value = '';
     }
 });
 
 // Display text messages from server
 socket.on('chatMessage', (data) => {
-    saveMessage(data); // Save to localStorage
+    saveMessage(data);
     displayMessage(data);
 });
 
 // Display file messages from server
 socket.on('fileMessage', (data) => {
-    saveMessage(data); // Save to localStorage
+    saveMessage(data);
     displayMessage(data);
+});
+
+// Display reactions from server
+socket.on('messageReaction', (data) => {
+    const messageElement = [...messagesDiv.children].find((el) => el.dataset.id === data.messageId);
+    if (messageElement) {
+        const reactionElement = document.createElement('span');
+        reactionElement.textContent = data.emoji;
+        messageElement.appendChild(reactionElement);
+    }
 });
 
 // Format timestamps
