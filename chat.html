@@ -5,45 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Platform</title>
 <style>
-    /* Existing styles */
+/* Reactions container */
+.reactions {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
 
-    /* Reaction menu */
-    .emoji-menu {
-        display: flex;
-        gap: 5px;
-        position: absolute;
-        background: #fff;
-        border: 1px solid #dcdcdc;
-        border-radius: 10px;
-        padding: 5px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-    }
+.reaction-bubble {
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    background-color: #f1f1f1;
+    color: #333;
+    display: inline-block;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
 
-    .emoji-menu button {
-        font-size: 1.5rem;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-    }
+/* Emoji menu */
+.emoji-menu {
+    display: flex;
+    gap: 5px;
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
 
-    .emoji-menu button:hover {
-        transform: scale(1.2);
-    }
+.emoji-menu button {
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
 
-    .reactions {
-        margin-top: 5px;
-        font-size: 1.2rem;
-        display: flex;
-        gap: 5px;
-    }
+.emoji-menu button:hover {
+    transform: scale(1.2);
+}
 
-    .reply {
-        font-style: italic;
-        font-size: 0.9rem;
-        margin-bottom: 5px;
-        color: #666;
+    /* Highlight message being replied to */
+    .message.replying {
+        border: 2px dashed #6a11cb;
+        padding: 12px;
     }
         /* General styles */
         * {
@@ -404,10 +411,17 @@ socket.on('fileMessage', (data) => {
 socket.on('messageReaction', (data) => {
     const messageElement = [...messagesDiv.children].find((el) => el.dataset.id === data.messageId);
     if (messageElement) {
-        const reactionElement = messageElement.querySelector('.reactions') || document.createElement('div');
-        reactionElement.classList.add('reactions');
-        reactionElement.textContent = data.emoji;
-        messageElement.appendChild(reactionElement);
+        let reactionContainer = messageElement.querySelector('.reactions');
+        if (!reactionContainer) {
+            reactionContainer = document.createElement('div');
+            reactionContainer.classList.add('reactions');
+            messageElement.appendChild(reactionContainer);
+        }
+
+        const reactionBubble = document.createElement('span');
+        reactionBubble.classList.add('reaction-bubble');
+        reactionBubble.textContent = data.emoji;
+        reactionContainer.appendChild(reactionBubble);
     }
 });
 
