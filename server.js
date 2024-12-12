@@ -78,7 +78,10 @@ io.on('connection', (socket) => {
             io.emit('chatMessage', { user: userNickname, message: msg, timestamp });
         }
     });
-
+// Handle reactions on the server
+socket.on('reactMessage', (data) => {
+    io.emit('messageReaction', { messageId: data.messageId, emoji: data.emoji });
+});
     // Handle file messages
     socket.on('fileMessage', (data) => {
         if (userNickname) {
