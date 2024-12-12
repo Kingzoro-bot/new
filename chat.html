@@ -179,6 +179,7 @@ const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 const uploadButton = document.getElementById('upload-button');
 const fileInput = document.getElementById('file-input');
+let replyContext = null;
 
 if (!nickname) {
     window.location.href = '/';
@@ -223,9 +224,9 @@ function cleanOldMessages() {
 function displayMessage(data) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', data.user === nickname ? 'sent' : 'received');
+    messageElement.dataset.id = data.id;
 
-    // Message content
-    const contentElement = document.createElement('div');
+    // Handle replies
     if (data.replyTo) {
         const replyElement = document.createElement('div');
         replyElement.classList.add('reply');
@@ -233,36 +234,24 @@ function displayMessage(data) {
         messageElement.appendChild(replyElement);
     }
 
+    // Main message content
+    const contentElement = document.createElement('div');
     if (data.message) {
         contentElement.textContent = `${data.user}: ${data.message}`;
     } else if (data.fileUrl) {
-        const userText = document.createElement('div');
-        userText.textContent = `${data.user}:`;
-        messageElement.appendChild(userText);
-
-        let mediaElement;
-        if (data.fileType.startsWith('image/')) {
-            mediaElement = document.createElement('img');
-            mediaElement.src = data.fileUrl;
-            mediaElement.alt = 'Uploaded Image';
-            mediaElement.style.maxWidth = '100%';
-            mediaElement.style.maxHeight = '200px';
-        } else if (data.fileType.startsWith('audio/')) {
-            mediaElement = document.createElement('audio');
-            mediaElement.controls = true;
-            mediaElement.src = data.fileUrl;
-        } else if (data.fileType.startsWith('video/')) {
-            mediaElement = document.createElement('video');
-            mediaElement.controls = true;
-            mediaElement.style.maxWidth = '100%';
-            mediaElement.src = data.fileUrl;
-        }
-
+        const fileTypeText = data.fileType.startsWith('image/')
+            ? 'Image'
+            : data.fileType.startsWith('audio/')
+            ? 'Audio'
+            : data.fileType.startsWith('video/')
+            ? 'Video'
+            : 'File';
+        contentElement.textContent = `${data.user}: ${fileTypeText}`;
+        const mediaElement = createMediaElement(data.fileUrl, data.fileType);
         if (mediaElement) {
             contentElement.appendChild(mediaElement);
         }
     }
-
     messageElement.appendChild(contentElement);
 
     // Timestamp
@@ -271,59 +260,65 @@ function displayMessage(data) {
     timestampElement.textContent = formatTimestamp(data.timestamp);
     messageElement.appendChild(timestampElement);
 
-    // Reply and reaction functionality
-    const actionsDiv = document.createElement('div');
-    actionsDiv.classList.add('actions');
-
-    // Reply button
-    const replyButton = document.createElement('button');
-    replyButton.textContent = 'Reply';
-    replyButton.addEventListener('click', () => {
-        messageInput.value = `Replying to: ${data.message || 'Media'}`;
-        messageInput.dataset.replyTo = data.message || data.fileUrl || '';
-    });
-    actionsDiv.appendChild(replyButton);
-
     // Reaction functionality
     messageElement.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        const emojiMenu = document.createElement('div');
-        emojiMenu.classList.add('emoji-menu');
-        const emojis = ['👍', '❤️', '😊', '😂'];
-        emojis.forEach((emoji) => {
-            const emojiButton = document.createElement('button');
-            emojiButton.textContent = emoji;
-            emojiButton.addEventListener('click', () => {
-                socket.emit('reactMessage', { messageId: data.id, emoji });
-                emojiMenu.remove();
-            });
-            emojiMenu.appendChild(emojiButton);
-        });
-        messageElement.appendChild(emojiMenu);
-
-        document.addEventListener('click', () => emojiMenu.remove(), { once: true });
+        showReactionMenu(messageElement, data.id);
     });
-
-    messageElement.appendChild(actionsDiv);
 
     messagesDiv.appendChild(messageElement);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Send text message
+// Create a media element
+function createMediaElement(fileUrl, fileType) {
+    let mediaElement;
+    if (fileType.startsWith('image/')) {
+        mediaElement = document.createElement('img');
+        mediaElement.src = fileUrl;
+        mediaElement.alt = 'Uploaded Image';
+        mediaElement.style.maxWidth = '100%';
+        mediaElement.style.maxHeight = '200px';
+    } else if (fileType.startsWith('audio/')) {
+        mediaElement = document.createElement('audio');
+        mediaElement.controls = true;
+        mediaElement.src = fileUrl;
+    } else if (fileType.startsWith('video/')) {
+        mediaElement = document.createElement('video');
+        mediaElement.controls = true;
+        mediaElement.style.maxWidth = '100%';
+        mediaElement.src = fileUrl;
+    }
+    return mediaElement;
+}
+
+// Show reaction menu
+function showReactionMenu(messageElement, messageId) {
+    const emojiMenu = document.createElement('div');
+    emojiMenu.classList.add('emoji-menu');
+    const emojis = ['👍', '❤️', '😊', '😂'];
+    emojis.forEach((emoji) => {
+        const emojiButton = document.createElement('button');
+        emojiButton.textContent = emoji;
+        emojiButton.addEventListener('click', () => {
+            socket.emit('reactMessage', { messageId, emoji });
+            emojiMenu.remove();
+        });
+        emojiMenu.appendChild(emojiButton);
+    });
+    messageElement.appendChild(emojiMenu);
+
+    document.addEventListener('click', () => emojiMenu.remove(), { once: true });
+}
+
+// Send a text message
 sendButton.addEventListener('click', () => {
     const message = messageInput.value.trim();
-    const replyTo = messageInput.dataset.replyTo || null;
     if (message) {
-        socket.emit('chatMessage', { message, replyTo });
+        socket.emit('chatMessage', { message, replyTo: replyContext });
         messageInput.value = '';
-        delete messageInput.dataset.replyTo;
+        replyContext = null;
     }
-});
-
-// Trigger file input dialog
-uploadButton.addEventListener('click', () => {
-    fileInput.click();
 });
 
 // Handle file upload
@@ -351,28 +346,26 @@ fileInput.addEventListener('change', () => {
                     alert('File upload failed!');
                 }
             });
-
-        fileInput.value = '';
     }
 });
 
-// Display text messages from server
+// Display incoming messages
 socket.on('chatMessage', (data) => {
     saveMessage(data);
     displayMessage(data);
 });
 
-// Display file messages from server
 socket.on('fileMessage', (data) => {
     saveMessage(data);
     displayMessage(data);
 });
 
-// Display reactions from server
+// Display reactions
 socket.on('messageReaction', (data) => {
     const messageElement = [...messagesDiv.children].find((el) => el.dataset.id === data.messageId);
     if (messageElement) {
-        const reactionElement = document.createElement('span');
+        const reactionElement = messageElement.querySelector('.reactions') || document.createElement('div');
+        reactionElement.classList.add('reactions');
         reactionElement.textContent = data.emoji;
         messageElement.appendChild(reactionElement);
     }
@@ -381,10 +374,7 @@ socket.on('messageReaction', (data) => {
 // Format timestamps
 function formatTimestamp(timestamp) {
     const date = new Date(timestamp);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const seconds = date.getSeconds().toString().padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
 // Load messages on page load
